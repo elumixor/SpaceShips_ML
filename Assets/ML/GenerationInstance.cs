@@ -45,54 +45,55 @@ namespace ML {
         /// <summary>
         /// Helper class for inputs
         /// </summary>
+        [Serializable]
         public class InstanceInputs {
-            public Vector Values = new Vector(InputsCount);
+            public Vector values = new Vector(InputsCount);
 
             public Vector2 SelfPosition {
-                get => new Vector2(Values.Values[0], Values.Values[1]);
+                get => new Vector2(values.Values[0], values.Values[1]);
                 set {
-                    Values.Values[0] = value.x;
-                    Values.Values[1] = value.y;
+                    values.Values[0] = value.x;
+                    values.Values[1] = value.y;
                 }
             }
 
             public float SelfRotation {
-                get => Values.Values[2];
-                set => Values.Values[2] = value;
+                get => values.Values[2];
+                set => values.Values[2] = value;
             }
 
             public Vector2 SelfScale {
-                get => new Vector2(Values.Values[3], Values.Values[4]);
+                get => new Vector2(values.Values[3], values.Values[4]);
                 set {
-                    Values.Values[3] = value.x;
-                    Values.Values[4] = value.y;
+                    values.Values[3] = value.x;
+                    values.Values[4] = value.y;
                 }
             }
 
             public Vector2 GateObjectPosition {
-                get => new Vector2(Values.Values[5], Values.Values[6]);
+                get => new Vector2(values.Values[5], values.Values[6]);
                 set {
-                    Values.Values[5] = value.x;
-                    Values.Values[6] = value.y;
+                    values.Values[5] = value.x;
+                    values.Values[6] = value.y;
                 }
             }
 
             public Vector2 GateObjectScale {
-                get => new Vector2(Values.Values[7], Values.Values[8]);
+                get => new Vector2(values.Values[7], values.Values[8]);
                 set {
-                    Values.Values[7] = value.x;
-                    Values.Values[8] = value.y;
+                    values.Values[7] = value.x;
+                    values.Values[8] = value.y;
                 }
             }
 
             public float GateWidth {
-                get => Values.Values[9];
-                set => Values.Values[9] = value;
+                get => values.Values[9];
+                set => values.Values[9] = value;
             }
 
             public float GatePosition {
-                get => Values.Values[10];
-                set => Values.Values[10] = value;
+                get => values.Values[10];
+                set => values.Values[10] = value;
             }
 
             /// <summary>
@@ -104,7 +105,7 @@ namespace ML {
                 SelfScale = self.localScale;
 
                 var gateTransform = gate.transform;
-                
+
                 GateObjectPosition = gateTransform.position;
                 GateObjectScale = gateTransform.localScale;
                 GateWidth = gate.GateWidth;
@@ -115,28 +116,56 @@ namespace ML {
         /// <summary>
         /// Helper class for outputs
         /// </summary>
+        [Serializable]
         public class InstanceOutputs {
-            public Vector Values;
+            public Vector values;
 
-            public float Movement => Values.Values[0];
-            public float Rotation => Values.Values[1];
+            public float Movement => values.Values[0];
+            public float Rotation => values.Values[1];
         }
-        
+
+        /// <summary>
+        /// Rigidbody component
+        /// </summary>
+        private Rigidbody2D rb;
+
+        /// <summary>
+        /// Assign components and generate NN
+        /// </summary>
         private void Awake() {
             NN = new NeuralNetwork(MainHandler.NetworkLayout);
             CreationTime = Time.time;
             Inputs = new InstanceInputs();
             Outputs = new InstanceOutputs();
-            
+            rb = GetComponent<Rigidbody2D>();
         }
 
-        private void Update() {
-            if (Time.time >= CreationTime + Lifetime) Deactivate();
+        /// <summary>
+        /// Updates inputs, feeds them into NN and applies them to transform and rigidbody
+        /// </summary>
+        private void FixedUpdate() {
+            if (Time.time >= CreationTime + Lifetime) {
+                Deactivate();
+                return;
+            }
 
+            var tr = transform;
+            var position = tr.position;
+            
             var gate = MainHandler.Gates.First(g => g.transform.position.y > transform.position.y);
             
-            Inputs.Update(transform, gate);
-            Outputs.Values = NN.Apply(Inputs.Values);
+            Inputs.Update(tr, gate);
+            Outputs.values = NN.Apply(Inputs.values);
+
+            var ms = Time.fixedDeltaTime * Mathf.Clamp(Outputs.Movement, -1, 1);
+            var rot = Time.fixedDeltaTime * Mathf.Clamp(Outputs.Rotation, -1, 1) * 100;
+
+            rb.MovePosition(position + ms * tr.up);
+            rb.MoveRotation(Quaternion.Euler(0,0, rot));
+            
+            tr.Rotate(0,0, rot);
+            
+            Fitness = position.y;
         }
 
         private void Deactivate() {

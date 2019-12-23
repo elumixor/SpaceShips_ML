@@ -38,7 +38,7 @@ namespace ML.NN.Neurons {
             bias = genes[i];
         }
 
-        public virtual float Apply(Vector v) => v * weights + bias;
+        public virtual float Apply(Vector v) => weights * v + bias;
 
         public void Randomize(float min = 0f, float max = 1f) {
             for (var i = 0; i < weights.Length; i++) Genes[i] = weights.Values[i] = Random.Range(min, max);

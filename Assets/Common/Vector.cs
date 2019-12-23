@@ -38,7 +38,7 @@ namespace Common {
         /// </summary>
         /// <exception cref="Exception">If vectors have different length</exception>
         public static float operator *(Vector a, Vector b) {
-            if (a.Length != b.Length) throw new Exception("Cannot multiply vectors of different length");
+            if (a.Length != b.Length) throw new Exception($"Cannot multiply vectors of different length. Received {a} and {b}");
 
             var sum = 0f;
             for (var i = 0; i < a.Length; i++) sum += a.Values[i] * b.Values[i];
@@ -55,6 +55,10 @@ namespace Common {
             for (var i = 0; i < len; i++) result.Values[i] = a.Values[i] * value;
 
             return result;
+        }
+
+        public override string ToString() {
+            return "[" + string.Join(", ", Values) + "]";
         }
     }
 }

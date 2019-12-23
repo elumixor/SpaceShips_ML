@@ -6,10 +6,10 @@ namespace Player.Movement {
         [SerializeField] private float rs;
         
         
-        private void Update() {
+        private void FixedUpdate() {
             var tr = transform;
 
-            var deltaTime = Time.deltaTime;
+            var deltaTime = Time.fixedDeltaTime;
 
             if (Input.GetKey(KeyCode.W)) tr.Translate(deltaTime * ms * Vector3.up);
             if (Input.GetKey(KeyCode.S)) tr.Translate(deltaTime * ms * Vector3.down);

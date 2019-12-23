@@ -1,19 +1,23 @@
-﻿using UnityEngine;
+﻿using ML.NN;
+using UnityEngine;
 
 namespace ML {
     /// <summary>
     /// Manages current generation 
     /// </summary>
     public class Generation : MonoBehaviour {
-        /// <summary>
-        /// Lifetime of this generation
-        /// </summary>
         private float lifetime;
 
         /// <summary>
-        /// Current evaluation
+        /// Lifetime of this generation
         /// </summary>
-        public readonly GenerationEvaluation evaluation = new GenerationEvaluation();
+        public float Lifetime {
+            get => lifetime;
+            set {
+                lifetime = value;
+                foreach (var instance in Instances) instance.Lifetime = lifetime;
+            }
+        }
 
         /// <summary>
         /// Created instances
@@ -24,12 +28,12 @@ namespace ML {
         /// Generation number
         /// </summary>
         public int Number { get; private set; }
-        
+
         /// <summary>
         /// How much are genes mutated (0 = none at all, 1 = completely)
         /// </summary>
         public float MutationFactor { get; private set; }
-        
+
         /// <summary>
         /// How high is the probability of mutation (0 = never, 1 = always)
         /// </summary>
@@ -48,9 +52,10 @@ namespace ML {
             gen.lifetime = lifetime;
             gen.MutationFactor = mutationFactor;
             gen.MutationProbability = mutationProbability;
+
             gen.CreateInstances(instancesCount);
 
-            foreach (var instance in gen.Instances) instance.NN.SetRandomValues();
+            foreach (var instance in gen.Instances) instance.NN.SetRandomValues(-1, 1);
 
             return gen;
         }
@@ -58,34 +63,45 @@ namespace ML {
         /// <summary>
         /// Factory to reproduce generation 
         /// </summary>
-        /// <param name="generation"></param>
+        /// <param name="lifetime">Lifetime of an instance in the generation </param>
+        /// <param name="instancesCount">Number of instances in generation</param>
+        /// <param name="mutationProbability">How often are genes mutated</param>
+        /// <param name="mutationFactor">How much much do genes deviate when mutated</param>
+        /// <param name="evaluation">Generation evaluation. Create via <see cref="Evaluate"/></param>
+        /// <param name="newRandomCount">Number of completely new instances</param>
+        /// <param name="generationNumber"></param>
         /// <returns></returns>
-        public static Generation Reproduce(Generation generation) {
-            var number = generation.Number + 1;
-            var gen = new GameObject($"Generation {number}").AddComponent<Generation>();
-            gen.Number = number;
+        public static Generation Reproduce(float lifetime, int instancesCount, float mutationProbability, float mutationFactor,
+            GenerationEvaluation evaluation, int newRandomCount, int generationNumber) {
+            var gen = new GameObject($"Generation {generationNumber}").AddComponent<Generation>();
+            gen.Number = generationNumber;
 
-            gen.lifetime = generation.lifetime;
-            gen.MutationFactor = generation.MutationFactor;
-            gen.MutationProbability = generation.MutationProbability;
-            gen.CreateInstances(gen.Instances.Length);
+            gen.lifetime = lifetime;
+            gen.MutationFactor = mutationFactor;
+            gen.MutationProbability = mutationProbability;
 
+            gen.CreateInstances(instancesCount);
 
-            foreach (var instance in gen.Instances) {
-                var nn = instance.NN;
-                nn.Crossover(generation);
-                nn.Mutate(gen.MutationProbability, gen.MutationFactor);
+            for (var index = 0; index < gen.Instances.Length; index++) {
+                var instance = gen.Instances[index];
+                if (index < newRandomCount) instance.NN.SetRandomValues(-1, 1);
+                else {
+                    instance.NN.Crossover(evaluation);
+                    instance.NN.Mutate(gen.MutationProbability, gen.MutationFactor);
+                }
             }
 
             return gen;
         }
 
         /// <summary>
-        /// Update current generation evaluation
+        /// Evaluate current generation
         /// </summary>
-        private void Update() {
-            evaluation.Update(Instances);
-        }
+        /// <remarks>
+        /// Generates Mating Pool
+        /// </remarks>
+        /// <returns></returns>
+        public GenerationEvaluation Evaluate() => new GenerationEvaluation(Instances);
 
         /// <summary>
         /// Helper function to create and initialize instances

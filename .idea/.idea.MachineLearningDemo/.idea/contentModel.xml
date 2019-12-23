@@ -6,6 +6,7 @@
       <e p="Assembly-CSharp.csproj" t="IncludeRecursive" />
       <e p="Assets" t="Include">
         <e p="Common" t="Include">
+          <e p="Extensions.cs" t="Include" />
           <e p="Vector.cs" t="Include" />
         </e>
         <e p="Gate" t="Include">
@@ -59,6 +60,19 @@
           </e>
         </e>
       </e>
+      <e p="Graphs\node_modules\babel-core" t="IncludeRecursive" />
+      <e p="Graphs\node_modules\babel-loader" t="IncludeRecursive" />
+      <e p="Graphs\node_modules\babel-preset-env" t="IncludeRecursive" />
+      <e p="Graphs\node_modules\css-loader" t="IncludeRecursive" />
+      <e p="Graphs\node_modules\html-webpack-plugin" t="IncludeRecursive" />
+      <e p="Graphs\node_modules\lodash" t="IncludeRecursive" />
+      <e p="Graphs\node_modules\node-sass" t="IncludeRecursive" />
+      <e p="Graphs\node_modules\sass-loader" t="IncludeRecursive" />
+      <e p="Graphs\node_modules\style-loader" t="IncludeRecursive" />
+      <e p="Graphs\node_modules\webpack" t="IncludeRecursive" />
+      <e p="Graphs\node_modules\webpack-cli" t="IncludeRecursive" />
+      <e p="Graphs\node_modules\webpack-livereload-plugin" t="IncludeRecursive" />
+      <e p="Graphs\node_modules\webpack-node-externals" t="IncludeRecursive" />
       <e p="MachineLearningDemo.sln" t="IncludeFlat" />
       <e p="obj" t="ExcludeRecursive" />
       <e p="Packages" t="ExcludeRecursive" />

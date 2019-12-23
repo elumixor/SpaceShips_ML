@@ -33,13 +33,11 @@ namespace ML.NN {
             hidden = new HiddenNeuron[ih.Length][];
 
             // Initialize DNA
-            genes = new float[networkLayout.Total];
+            genes = new float[networkLayout.TotalGenes];
 
             // Gene counter
             var g = 0;
 
-            // Number of inputs for neuron in layer, which equals to number of neurons in previous layer
-            var layerInputsCount = 1;
 
             // Generate input layer
             for (var i = 0; i < ic; i++) {
@@ -47,6 +45,9 @@ namespace ML.NN {
 
                 foreach (var gene in neuron.Genes) genes[g++] = gene;
             }
+
+            // Number of inputs for neuron in layer, which equals to number of neurons in previous layer
+            var layerInputsCount = ic;
 
             // Generate hidden layers
             for (var i = 0; i < ih.Length; i++) {
@@ -98,7 +99,7 @@ namespace ML.NN {
 
                 v = v1;
             }
-            
+
             var v2 = new Vector(outputs.Length);
 
             for (var j = 0; j < outputs.Length; j++) v2.Values[j] = outputs[j].Apply(v);
@@ -111,11 +112,15 @@ namespace ML.NN {
         /// <summary>
         /// Create child NN from generation
         /// </summary>
-        public void Crossover(Generation generation) {
-            var topNN = generation.evaluation.MatingPool;
+        public void Crossover(GenerationEvaluation evaluation) {
+            var a = evaluation.NNFromMatingPool;
+            var b = evaluation.NNFromMatingPool;
 
             // Create new DNA
-            for (var i = 0; i < genes.Length; i++) genes[i] = topNN[Random.value > .5 ? 1 : 0].NN.genes[i];
+            for (var i = 0; i < genes.Length; i++) {
+//                genes[i] = topNN[Random.value > .5 ? 1 : 0].NN.genes[i]; // random crossover
+                genes[i] = (i % 2 == 0 ? a : b).genes[i]; // calculated crossover
+            }
 
             UpdateFromGenes();
         }
@@ -141,8 +146,8 @@ namespace ML.NN {
             foreach (var neuron in this) {
                 for (var index = 0; index < neuron.Genes.Length; index++) {
                     var gene = genes[g];
-                    neuron.Genes[index] = genes[g++] =
-                        Random.value < mutationProbability ? gene : Mathf.Lerp(gene, Random.value, mutationFactor);
+                    neuron.Genes[index] =
+                        genes[g++] = Random.value < mutationProbability ? gene : gene + Random.Range(-1f, 1f) * mutationFactor;
                 }
 
                 neuron.UpdateFromGenes();
