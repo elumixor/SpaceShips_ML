@@ -15,47 +15,55 @@ Each spaceship has a neural network, which is responsible for spaceship's moveme
 Training is done trough genetic algorithm, inspired by natural selection:
 
 Neural Network Structure:
-    1. 11 input nodes:
-        - Spaceship's position (2)
-        - Spaceship's rotation (1)
-        - Spaceship's scale (2)
-        - Gate's object's position (2)
-        - Gate's object's scale (2)
-        - Gate width (1)
-        - Gate horizontal position (1)
+1. 11 input nodes:
+
+    - Spaceship's position (2)
+    - Spaceship's rotation (1)
+    - Spaceship's scale (2)
+    - Gate's object's position (2)
+    - Gate's object's scale (2)
+    - Gate width (1)
+    - Gate horizontal position (1)
+
+2. 2 Output nodes:
+
+    - Speed: 1 = go forward, -1 = go backwards
+    - Steering: 1 = steer right, -1 = steer left
+
+3. Varying structure of FFN (fully connected hidden layers)
+
+    - Simple (8 nodes)
+    - Medium (8, 6 nodes)
+    - Complex (11, 8, 6 nodes)
         
-    2. 2 Output nodes:
-        - Speed: 1 = go forward, -1 = go backwards
-        - Steering: 1 = steer right, -1 = steer left
-        
-    3. Varying structure of FFN (fully connected hidden layers)
-        - Simple (8 nodes)
-        - Medium (8, 6 nodes)
-        - Complex (11, 8, 6 nodes)
         
 Fitness functions:
-    - Linear: fitness = 'y' position of the object
-    - Gate: same as linear but raised to the power of number of gates passed
-    - Vertical: tries to prohibit unnecessary horizontal movement by subtracting from total passed distance distance passed horizontally
+
+- Linear: fitness = 'y' position of the object
+- Gate: same as linear but raised to the power of number of gates passed
+- Vertical: tries to prohibit unnecessary horizontal movement by subtracting from total passed distance distance passed horizontally
     
 Selection functions:
-    - Best: always chooses the best instance (changes can happen thus only  due to mutation)
-    - Top two: always chooses best two different instances
-    - Top two random: chooses randomly wrt fitness
+
+- Best: always chooses the best instance (changes can happen thus only  due to mutation)
+- Top two: always chooses best two different instances
+- Top two random: chooses randomly wrt fitness
     
 Crossover functions:
-    - Step: changes parent on every new gene, goes through genes sequentially
-    - StepRandom: for every gene chooses parent randomly
-    - Average: averages parent's genes
-    - HalfBestWorse: selects first half of genes from better parent, second - from worse
-    - HalfWorstBest: selects first half of genes from worse parent, second - from better
-    - HalfRandomShift: selects half of genes starting from random gene
-    - FractionByFitness: mixes genes wrt to parents' fitnesses
-    - FractionRandom: mixes genes in random fraction
+
+- Step: changes parent on every new gene, goes through genes sequentially
+- StepRandom: for every gene chooses parent randomly
+- Average: averages parent's genes
+- HalfBestWorse: selects first half of genes from better parent, second - from worse
+- HalfWorstBest: selects first half of genes from worse parent, second - from better
+- HalfRandomShift: selects half of genes starting from random gene
+- FractionByFitness: mixes genes wrt to parents' fitnesses
+- FractionRandom: mixes genes in random fraction
     
 Mutation:
-    - Absolute: modifies by fixed amount * random value (-1..1)
-    - Relative: modifies by gene's value * random value (-1..1)
+
+- Absolute: modifies by fixed amount * random value (-1..1)
+- Relative: modifies by gene's value * random value (-1..1)
 
 ### Visualizing results
 
