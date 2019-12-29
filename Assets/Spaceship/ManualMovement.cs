@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace Player.Movement {
+namespace Spaceship {
     public class ManualMovement : MonoBehaviour {
         [SerializeField] private float ms;
         [SerializeField] private float rs;

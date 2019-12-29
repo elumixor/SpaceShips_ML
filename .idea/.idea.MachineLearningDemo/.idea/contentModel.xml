@@ -16,7 +16,9 @@
           <e p="Generation.cs" t="Include" />
           <e p="GenerationEvaluation.cs" t="Include" />
           <e p="GenerationInstance.cs" t="Include" />
+          <e p="GenerationParameters.cs" t="Include" />
           <e p="MainHandler.cs" t="Include" />
+          <e p="MatingPool.cs" t="Include" />
           <e p="NN" t="Include">
             <e p="ActivationFunction.cs" t="Include" />
             <e p="NetworkLayout.cs" t="Include" />
@@ -26,6 +28,12 @@
               <e p="InputNeuron.cs" t="Include" />
               <e p="Neuron.cs" t="Include" />
             </e>
+          </e>
+          <e p="ParameterFunctions" t="Include">
+            <e p="CrossoverFunction.cs" t="Include" />
+            <e p="FitnessFunction.cs" t="Include" />
+            <e p="MutationFunction.cs" t="Include" />
+            <e p="SelectionFunction.cs" t="Include" />
           </e>
         </e>
         <e p="Spaceship" t="Include">
@@ -60,19 +68,8 @@
           </e>
         </e>
       </e>
-      <e p="Graphs\node_modules\babel-core" t="IncludeRecursive" />
-      <e p="Graphs\node_modules\babel-loader" t="IncludeRecursive" />
-      <e p="Graphs\node_modules\babel-preset-env" t="IncludeRecursive" />
-      <e p="Graphs\node_modules\css-loader" t="IncludeRecursive" />
-      <e p="Graphs\node_modules\html-webpack-plugin" t="IncludeRecursive" />
-      <e p="Graphs\node_modules\lodash" t="IncludeRecursive" />
-      <e p="Graphs\node_modules\node-sass" t="IncludeRecursive" />
-      <e p="Graphs\node_modules\sass-loader" t="IncludeRecursive" />
-      <e p="Graphs\node_modules\style-loader" t="IncludeRecursive" />
-      <e p="Graphs\node_modules\webpack" t="IncludeRecursive" />
-      <e p="Graphs\node_modules\webpack-cli" t="IncludeRecursive" />
-      <e p="Graphs\node_modules\webpack-livereload-plugin" t="IncludeRecursive" />
-      <e p="Graphs\node_modules\webpack-node-externals" t="IncludeRecursive" />
+      <e p="Graphs\node_modules\cors" t="IncludeRecursive" />
+      <e p="Graphs\node_modules\express" t="IncludeRecursive" />
       <e p="MachineLearningDemo.sln" t="IncludeFlat" />
       <e p="obj" t="ExcludeRecursive" />
       <e p="Packages" t="ExcludeRecursive" />

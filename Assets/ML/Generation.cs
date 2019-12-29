@@ -1,23 +1,17 @@
-﻿using ML.NN;
+﻿using System.Threading;
+using ML.NN;
+using ML.ParameterFunctions;
 using UnityEngine;
 
 namespace ML {
     /// <summary>
     /// Manages current generation 
     /// </summary>
-    public class Generation : MonoBehaviour {
-        private float lifetime;
-
+    public class Generation {
         /// <summary>
-        /// Lifetime of this generation
+        /// Game Object, containing generation instances
         /// </summary>
-        public float Lifetime {
-            get => lifetime;
-            set {
-                lifetime = value;
-                foreach (var instance in Instances) instance.Lifetime = lifetime;
-            }
-        }
+        public GameObject GameObject;
 
         /// <summary>
         /// Created instances
@@ -27,35 +21,25 @@ namespace ML {
         /// <summary>
         /// Generation number
         /// </summary>
-        public int Number { get; private set; }
+        public int Number { get; }
 
-        /// <summary>
-        /// How much are genes mutated (0 = none at all, 1 = completely)
-        /// </summary>
-        public float MutationFactor { get; private set; }
-
-        /// <summary>
-        /// How high is the probability of mutation (0 = never, 1 = always)
-        /// </summary>
-        public float MutationProbability { get; private set; }
+        
+        private Generation(int generationNumber, int instancesCount) {
+            GameObject = new GameObject($"Generation {generationNumber}");
+            Number = generationNumber;
+            CreateInstances(instancesCount);
+        }
 
         /// <summary>
         /// Factory for creating random generation
         /// </summary>
-        /// <param name="lifetime">Lifetime of an instance in the generation </param>
-        /// <param name="instancesCount">Number of instances in generation</param>
-        /// <param name="mutationProbability">How often are genes mutated</param>
-        /// <param name="mutationFactor">How much much do genes deviate when mutated</param>
-        public static Generation Random(float lifetime, int instancesCount, float mutationProbability, float mutationFactor) {
-            var gen = new GameObject("Generation 0").AddComponent<Generation>();
+        public static Generation Random(GenerationParameters parameters) {
+            var gen = new Generation(0, parameters.instancesCount);
 
-            gen.lifetime = lifetime;
-            gen.MutationFactor = mutationFactor;
-            gen.MutationProbability = mutationProbability;
-
-            gen.CreateInstances(instancesCount);
-
-            foreach (var instance in gen.Instances) instance.NN.SetRandomValues(-1, 1);
+            foreach (var instance in gen.Instances) {
+                instance.NN.SetRandomValues(-1, 1);
+                instance.dieOnCollision = parameters.dieOneCollision;
+            }
 
             return gen;
         }
@@ -63,32 +47,30 @@ namespace ML {
         /// <summary>
         /// Factory to reproduce generation 
         /// </summary>
-        /// <param name="lifetime">Lifetime of an instance in the generation </param>
-        /// <param name="instancesCount">Number of instances in generation</param>
-        /// <param name="mutationProbability">How often are genes mutated</param>
-        /// <param name="mutationFactor">How much much do genes deviate when mutated</param>
+        /// <param name="parameters">Generation parameters</param>
         /// <param name="evaluation">Generation evaluation. Create via <see cref="Evaluate"/></param>
-        /// <param name="newRandomCount">Number of completely new instances</param>
         /// <param name="generationNumber"></param>
         /// <returns></returns>
-        public static Generation Reproduce(float lifetime, int instancesCount, float mutationProbability, float mutationFactor,
-            GenerationEvaluation evaluation, int newRandomCount, int generationNumber) {
-            var gen = new GameObject($"Generation {generationNumber}").AddComponent<Generation>();
-            gen.Number = generationNumber;
-
-            gen.lifetime = lifetime;
-            gen.MutationFactor = mutationFactor;
-            gen.MutationProbability = mutationProbability;
-
-            gen.CreateInstances(instancesCount);
+        public static Generation Reproduce(GenerationParameters parameters, GenerationEvaluation evaluation, int generationNumber) {
+            var gen = new Generation(generationNumber, parameters.instancesCount);
 
             for (var index = 0; index < gen.Instances.Length; index++) {
                 var instance = gen.Instances[index];
-                if (index < newRandomCount) instance.NN.SetRandomValues(-1, 1);
-                else {
-                    instance.NN.Crossover(evaluation);
-                    instance.NN.Mutate(gen.MutationProbability, gen.MutationFactor);
+
+                if (index < parameters.preservedCount) {
+                    instance.NN.genes = evaluation.pool.Best().Genes;
+                    instance.NN.UpdateFromGenes();
                 }
+                else if (index < parameters.preservedCount + parameters.newRandomCount) instance.NN.SetRandomValues(-1, 1);
+                else {
+                    parameters.crossoverFunction.Crossover(instance.NN, evaluation, parameters.selectionFunction, parameters.fitnessPower);
+                    parameters.mutationFunction.Mutate(instance.NN, parameters.mutationProbability, parameters.mutationFactor);
+                    
+                    instance.NN.UpdateFromGenes();
+                }
+
+                instance.dieOnCollision = parameters.dieOneCollision;
+                instance.fitnessFunction = parameters.fitnessFunction;
             }
 
             return gen;
@@ -106,13 +88,9 @@ namespace ML {
         /// <summary>
         /// Helper function to create and initialize instances
         /// </summary>
-        /// <param name="count"></param>
         private void CreateInstances(int count) {
             Instances = new GenerationInstance[count];
-            for (var i = 0; i < count; i++) {
-                var instance = Instances[i] = Instantiate(MainHandler.InstancePrefab, transform);
-                instance.Lifetime = lifetime;
-            }
+            for (var i = 0; i < count; i++) Instances[i] = Object.Instantiate(MainHandler.InstancePrefab, GameObject.transform);
         }
     }
 }

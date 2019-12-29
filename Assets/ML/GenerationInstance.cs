@@ -2,7 +2,9 @@
 using System.Linq;
 using Common;
 using ML.NN;
+using ML.ParameterFunctions;
 using UnityEngine;
+using Random = System.Random;
 
 namespace ML {
     public class GenerationInstance : MonoBehaviour {
@@ -13,19 +15,14 @@ namespace ML {
         public const int OutputsCount = 2;
 
         /// <summary>
+        /// Evaluator of the fitness score
+        /// </summary>
+        public FitnessFunction fitnessFunction;
+
+        /// <summary>
         /// Neural network the instance
         /// </summary>
         public NeuralNetwork NN { get; private set; }
-
-        /// <summary>
-        /// Fitness of the instance
-        /// </summary>
-        public float Fitness { get; private set; }
-
-        /// <summary>
-        /// Instances' maximum lifetime
-        /// </summary>
-        public float Lifetime { get; set; }
 
         /// <summary>
         /// Time when the instance was created
@@ -41,6 +38,7 @@ namespace ML {
         /// Vector of outputs
         /// </summary>
         public InstanceOutputs Outputs { get; private set; }
+
 
         /// <summary>
         /// Helper class for inputs
@@ -118,7 +116,7 @@ namespace ML {
         /// </summary>
         [Serializable]
         public class InstanceOutputs {
-            public Vector values;
+            public Vector values = new Vector(2);
 
             public float Movement => values.Values[0];
             public float Rotation => values.Values[1];
@@ -128,6 +126,24 @@ namespace ML {
         /// Rigidbody component
         /// </summary>
         private Rigidbody2D rb;
+
+        /// <summary>
+        /// If true - will die on collision with obstacle 
+        /// </summary>
+        public bool dieOnCollision;
+
+        /// <summary>
+        /// Total distance passed
+        /// </summary>
+        public float totalDistance;
+
+        /// <summary>
+        /// If true - has collided with an obstacle
+        /// </summary>
+        public bool Collided { get; private set; }
+
+        public Gate.Gate currentGate;
+        private Vector3 lastPos;
 
         /// <summary>
         /// Assign components and generate NN
@@ -140,36 +156,42 @@ namespace ML {
             rb = GetComponent<Rigidbody2D>();
         }
 
+        private void OnCollisionEnter2D(Collision2D other) {
+            if (dieOnCollision) {
+                Collided = true;
+                gameObject.SetActive(false);
+            }
+        }
+
         /// <summary>
         /// Updates inputs, feeds them into NN and applies them to transform and rigidbody
         /// </summary>
         private void FixedUpdate() {
-            if (Time.time >= CreationTime + Lifetime) {
-                Deactivate();
-                return;
-            }
-
             var tr = transform;
             var position = tr.position;
-            
-            var gate = MainHandler.Gates.First(g => g.transform.position.y > transform.position.y);
-            
-            Inputs.Update(tr, gate);
+
+            totalDistance += (lastPos - position).magnitude;
+            lastPos = position;
+
+            currentGate = MainHandler.Gates.First(g => g.transform.position.y > transform.position.y);
+
+            Inputs.Update(tr, currentGate);
             Outputs.values = NN.Apply(Inputs.values);
 
             var ms = Time.fixedDeltaTime * Mathf.Clamp(Outputs.Movement, -1, 1);
             var rot = Time.fixedDeltaTime * Mathf.Clamp(Outputs.Rotation, -1, 1) * 100;
 
-            rb.MovePosition(position + ms * tr.up);
-            rb.MoveRotation(Quaternion.Euler(0,0, rot));
-            
-            tr.Rotate(0,0, rot);
-            
-            Fitness = position.y;
-        }
+//            var ms = Time.fixedDeltaTime * UnityEngine.Random.Range(-1f, 1f);
+//            var rot = Time.fixedDeltaTime * UnityEngine.Random.Range(-1f, 1f) * 100;
 
-        private void Deactivate() {
-            gameObject.SetActive(false);
+            
+            rb.MovePosition(position + ms * tr.up);
+            rb.MoveRotation(Quaternion.Euler(0, 0, rot));
+
+            tr.Rotate(0, 0, rot);
+
+            NN.Fitness = fitnessFunction.EvaluateFitness(this);
+//            NN.Fitness = UnityEngine.Random.value;
         }
     }
 }

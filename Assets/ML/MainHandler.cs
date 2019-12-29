@@ -14,14 +14,15 @@ namespace ML {
         [SerializeField] private GenerationInstance instancePrefab;
         [SerializeField] private NetworkLayout networkLayout;
 
-        [SerializeField] private int instancesCount;
-        [SerializeField] private int newRandomCount;
+        private NetworkLayout oldLayout;
+        private bool generateRandom;
 
-        [SerializeField, Range(0, 10)] private float generationLifetime;
-        [SerializeField, Range(0, 10)] private float simulationSpeed;
-        [SerializeField, Range(0, 1)] private float mutationProbability;
-        [SerializeField, Range(0, 1)] private float mutationFactor;
-        [SerializeField] private string logFilePath;
+        [SerializeField] private GenerationParameters generationParameters;
+        [Range(0, 20)] public float simulationSpeed;
+
+
+        private const string dataFilePath = "Logging/data.log";
+        private const string fitnessesFilePath = "Logging/fitnesses.log";
 
         /// <summary>
         /// Instance prefab (set on Awake)
@@ -55,8 +56,6 @@ namespace ML {
         /// </summary>
         public Generation CurrentGeneration { get; private set; }
 
-        private string FilePath => $"{Application.dataPath}/{logFilePath}";
-
         // Methods
 
         /// <summary>
@@ -69,6 +68,7 @@ namespace ML {
             Gates = FindObjectsOfType<Gate.Gate>().OrderBy(g => g.transform.position.y).ToArray();
         }
 
+
         /// <summary>
         /// Create first generation on start
         /// </summary>
@@ -76,8 +76,10 @@ namespace ML {
             // Skip first 10 frames due to editor lag when starting play mode
             for (var i = 0; i < 10; i++) yield return new WaitForEndOfFrame();
 
-            File.Create(FilePath);
-            CurrentGeneration = Generation.Random(generationLifetime, instancesCount, mutationProbability, mutationFactor);
+            ClearLogFiles();
+
+            CurrentGeneration = Generation.Random(generationParameters);
+
             UpdateGenerationTime();
         }
 
@@ -85,16 +87,39 @@ namespace ML {
         /// Clean generation and reproduce when generation lifetime exceeded
         /// </summary>
         private void Update() {
-            if (GenerationCurrentLifeTime < generationLifetime) return;
+            if (GenerationCurrentLifeTime < generationParameters.lifetime) return;
+
+            if (generateRandom) {
+                Destroy(CurrentGeneration.GameObject);
+
+                CurrentGeneration = Generation.Random(generationParameters);
+
+                UpdateGenerationTime();
+
+                generateRandom = false;
+                return;
+            }
 
             var evaluation = CurrentGeneration.Evaluate();
 
             LogData(evaluation, CurrentGeneration.Number);
+
             var oldGeneration = CurrentGeneration;
-            CurrentGeneration = Generation.Reproduce(generationLifetime, instancesCount, mutationProbability, mutationFactor, evaluation,
-                newRandomCount, oldGeneration.Number + 1);
-            Destroy(oldGeneration.gameObject);
+
+            CurrentGeneration = Generation.Reproduce(generationParameters, evaluation, oldGeneration.Number + 1);
+
+            foreach (var instance in CurrentGeneration.Instances) instance.fitnessFunction = generationParameters.fitnessFunction;
+
+            Destroy(oldGeneration.GameObject);
             UpdateGenerationTime();
+        }
+
+        /// <summary>
+        /// Clears log files from old info
+        /// </summary>
+        private static void ClearLogFiles() {
+            File.Create($"{Application.dataPath}/{dataFilePath}");
+            File.Create($"{Application.dataPath}/{fitnessesFilePath}");
         }
 
         /// <summary>
@@ -106,7 +131,11 @@ namespace ML {
 
         private void OnValidate() {
             Time.timeScale = simulationSpeed;
-            if (CurrentGeneration != null) CurrentGeneration.Lifetime = generationLifetime;
+            
+            if (networkLayout != oldLayout) {
+                generateRandom = true;
+                oldLayout = networkLayout;
+            }
         }
 
         private void LogData(GenerationEvaluation evaluation, int generationNumber) {
@@ -115,8 +144,11 @@ namespace ML {
             var avg = evaluation.FitnessAverage;
             var med = evaluation.FitnessMedian;
 
-            using (var sw = File.AppendText(FilePath))
+            using (var sw = File.AppendText($"{Application.dataPath}/{dataFilePath}"))
                 sw.WriteLine($"{generationNumber}: {max}, {min}, {avg}, {med}");
+
+            using (var sw = File.AppendText($"{Application.dataPath}/{fitnessesFilePath}"))
+                sw.WriteLine($"{generationNumber}: {string.Join(", ", evaluation.Fitnesses)}");
         }
     }
 }

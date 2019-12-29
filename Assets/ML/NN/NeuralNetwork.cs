@@ -4,18 +4,23 @@ using System.Collections.Generic;
 using System.Linq;
 using Common;
 using ML.NN.Neurons;
+using ML.ParameterFunctions;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
 namespace ML.NN {
+    [Serializable]
     public class NeuralNetwork : IEnumerable<Neuron> {
         // neurons
         private readonly InputNeuron[] inputs;
         private readonly HiddenNeuron[][] hidden;
         private readonly Neuron[] outputs;
 
+        // Fitness
+        public float Fitness { get; set; }
+        
         // genes
-        private readonly float[] genes;
+        public float[] genes;
 
         // Initialization
 
@@ -107,49 +112,13 @@ namespace ML.NN {
             return v2;
         }
 
-        // Reproduction
-
-        /// <summary>
-        /// Create child NN from generation
-        /// </summary>
-        public void Crossover(GenerationEvaluation evaluation) {
-            var a = evaluation.NNFromMatingPool;
-            var b = evaluation.NNFromMatingPool;
-
-            // Create new DNA
-            for (var i = 0; i < genes.Length; i++) {
-//                genes[i] = topNN[Random.value > .5 ? 1 : 0].NN.genes[i]; // random crossover
-                genes[i] = (i % 2 == 0 ? a : b).genes[i]; // calculated crossover
-            }
-
-            UpdateFromGenes();
-        }
-
         /// <summary>
         /// Updates neurons wrt to current genes. Call this function after you change genes
         /// </summary>
-        private void UpdateFromGenes() {
+        public void UpdateFromGenes() {
             var g = 0;
             foreach (var neuron in this) {
                 for (var index = 0; index < neuron.Genes.Length; index++) neuron.Genes[index] = genes[g++];
-                neuron.UpdateFromGenes();
-            }
-        }
-
-        /// <summary>
-        /// Mutate NN
-        /// </summary>
-        /// <param name="mutationProbability">How high is the probability of mutation (0 - never, 1 - always)</param>
-        /// <param name="mutationFactor">How much are genes mutated (0 - none at all, 1 - completely)</param>
-        public void Mutate(float mutationProbability, float mutationFactor) {
-            var g = 0;
-            foreach (var neuron in this) {
-                for (var index = 0; index < neuron.Genes.Length; index++) {
-                    var gene = genes[g];
-                    neuron.Genes[index] =
-                        genes[g++] = Random.value < mutationProbability ? gene : gene + Random.Range(-1f, 1f) * mutationFactor;
-                }
-
                 neuron.UpdateFromGenes();
             }
         }
